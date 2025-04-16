@@ -1,0 +1,12 @@
+{
+  "host": "192.168.79.4",
+  "port": 5672,
+  "username": "mythic_user",
+  "password": "mLjrXF2IKJxQvZZMwUK8avcnmjveUR",
+  "vhost": "mythic_vhost",
+  "exchange": "mythic_exchange",
+  "queue": "igidir_queue",
+  "routing_key": "igidir"
+
+
+}
