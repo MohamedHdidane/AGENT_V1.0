@@ -1,12 +1,6 @@
 {
-  "host": "192.168.79.4",
-  "port": 5672,
-  "username": "mythic_user",
-  "password": "mLjrXF2IKJxQvZZMwUK8avcnmjveUR",
-  "vhost": "mythic_vhost",
-  "exchange": "mythic_exchange",
-  "queue": "igidir_queue",
-  "routing_key": "igidir"
-
-
+  "rabbit_host": "127.0.0.1",
+  "rabbit_port": 5672,
+  "rabbit_vhost": "mythic_vhost",
+  "container_files_path": "/Mythic/agent_code"
 }

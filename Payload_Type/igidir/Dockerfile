@@ -1,21 +1,29 @@
 FROM python:3.9-slim as builder
 
-WORKDIR /app
-COPY . .
+WORKDIR /Mythic/
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y gcc g++ make procps && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN pip install --user -r requirements.txt
+# Copy over required files
+COPY ["requirements.txt", "/Mythic/"]
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.9-slim
 
-WORKDIR /app
-COPY --from=builder /root/.local /root/.local
-COPY --from=builder /app .
+WORKDIR /Mythic/
 
-ENV PATH=/root/.local/bin:$PATH
-ENV PYTHONPATH=/app
+# Copy Python dependencies from builder
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-CMD ["python", "-m", "igidir"]
+# Copy the agent code
+COPY . /Mythic/
+
+# Set the entrypoint
+ENTRYPOINT ["python", "main.py"]
