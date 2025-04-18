@@ -21,7 +21,8 @@ FROM python:3.10-slim
 WORKDIR /Mythic/
 
 # Copy Python dependencies from builder
-COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/>COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy the agent code
 COPY . /Mythic/
