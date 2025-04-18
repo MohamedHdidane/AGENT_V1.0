@@ -1,4 +1,4 @@
-FROM python:3.9-slim as builder
+FROM python:3.10-slim as builder
 
 WORKDIR /Mythic/
 
@@ -10,17 +10,18 @@ RUN apt-get update && \
 
 # Copy over required files
 COPY ["requirements.txt", "/Mythic/"]
+COPY rabbitmq_config.json /Mythic/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-FROM python:3.9-slim
+
+FROM python:3.10-slim
 
 WORKDIR /Mythic/
 
 # Copy Python dependencies from builder
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/>COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy the agent code
 COPY . /Mythic/

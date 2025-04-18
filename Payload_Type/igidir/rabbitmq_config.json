@@ -1,6 +1,8 @@
 {
-  "rabbit_host": "127.0.0.1",
-  "rabbit_port": 5672,
-  "rabbit_vhost": "mythic_vhost",
-  "container_files_path": "/Mythic/agent_code"
+  "username": "mythic_user",
+  "password": "mLjrXF2IKJxQvZZMwUK8avcnmjveUR",
+  "host": "mythic_rabbitmq",
+  "port": 5672,
+  "virtual_host": "mythic_vhost",
+  "ssl": false
 }
